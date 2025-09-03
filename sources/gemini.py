@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from steam import Steam
 from open import Open
+from model import Function
 
 load_dotenv()
 
@@ -19,6 +20,12 @@ class Gemini:
             "text": text
         })
 
+    
+    # functions: list[function] = [
+    #     Function(
+    #         gemini=
+    #     )
+    # ]
     # Define function declaration
     open_steam_game = types.FunctionDeclaration(
         name="steam_client.start_game_from_name",
@@ -32,6 +39,34 @@ class Gemini:
                 )
             },
             required=["game_name"],
+        ),
+    )
+
+    open_brave = types.FunctionDeclaration(
+        name="open.open_brave",
+        description="Open a web browser",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "url": types.Schema(
+                    type=types.Type.STRING,
+                    description="The url to open, google.com by default"
+                )
+            },
+        ),
+    )
+
+    open_file = types.FunctionDeclaration(
+        name="open_file",
+        description="Open a file",
+        parameters=types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "path": types.Schema(
+                    type=types.Type.STRING,
+                    description="Path to the file"
+                )
+            },
         ),
     )
 
@@ -55,7 +90,7 @@ class Gemini:
         description="Open the powerpoint"
     )
 
-    tools = types.Tool(function_declarations=[open_steam_game, open_calc, open_word, open_excel, open_powerpoint])
+    tools = types.Tool(function_declarations=[open_steam_game, open_calc, open_word, open_excel, open_powerpoint, open_brave, open_file])
     config = types.GenerateContentConfig(tools=[tools])
 
 
@@ -73,34 +108,47 @@ class Gemini:
             config=self.config,
         )
 
-        fc = response.candidates[0].content.parts[0].function_call
-        text = response.candidates[0].content.parts[0].text
-
         self.add_history("user", prompt)
-        self.add_history("model", text)
 
-        if text:
-            print("Model text response:", text)
-        if fc:
-            print(f"Function to call: {fc.name}")
-            print(f"Arguments: {fc.args}")
-            if fc.name == "steam_client.start_game_from_name":
-                self.steam_client.start_game_from_name(**fc.args)
-            elif fc.name == "open.open_calc":
-                self.open_client.open_calc()
-            elif fc.name in ["open.open_word", "open_word"]:
-                self.open_client.open_word()
-            elif fc.name in ["open.open_excel", "open_excel"]:
-                self.open_client.open_excel()
-            elif fc.name in ["open.open_powerpoint", "open_powerpoint"]:
-                self.open_client.open_powerpoint()
-        else:
-            print("No function call found.")
+        for parts in response.candidates[0].content.parts:
+            fc = parts.function_call
+            text = parts.text    
+
+            if text:
+                self.add_history("model", text)
+                print("Model text response:", text)
+            if fc:
+                print(f"Function to call: {fc.name}")
+                print(f"Arguments: {fc.args}")
+                if fc.name == "steam_client.start_game_from_name":
+                    self.steam_client.start_game_from_name(**fc.args)
+                elif fc.name == "open.open_calc":
+                    self.open_client.open_calc()
+                elif fc.name in ["open.open_word", "open_word"]:
+                    self.open_client.open_word()
+                elif fc.name in ["open.open_excel", "open_excel"]:
+                    self.open_client.open_excel()
+                elif fc.name in ["open.open_powerpoint", "open_powerpoint"]:
+                    self.open_client.open_powerpoint()
+                elif fc.name in ["open.open_brave", "open_brave"]:
+                    self.open_client.open_brave(**fc.args)
+                elif fc.name in ["open_file"]:
+                    self.open_client.open_file(**fc.args)
+            else:
+                print("No function call found.")
 
     def make_prompt(self, prompt):
         games = list(self.steam_client.games.keys())
-        new_prompt = f"""Tu es Jarvis, un assistant sur windows qui peut ouvrir des jeux et quelques applications.
+        new_prompt = fr"""Tu es Jarvis, un assistant sur windows qui peut ouvrir des jeux et quelques applications.
 Voici les jeux que possède l'utilisateur: {games}
+L'utilisateur utilise ces sites:
+immich.clementpickel.fr pour stocker des photos
+webmin.clementpickel.fr pour administrer son serveur
+amp.clementpickel.fr pour lancer des serveurs de jeux
+
+La plupart des fichiers sont dans C:\Users\cpick
+Les repo github sont dans C:\Users\cpick\Documents\GitHub
+
 Historique de la conversation: {self.history}
 Répond a cette requête:
 {prompt}

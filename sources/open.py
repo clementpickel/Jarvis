@@ -1,5 +1,6 @@
 import subprocess
 import winreg
+import os
 
 class Open():
     installed_apps = []
@@ -19,7 +20,14 @@ class Open():
 
     def open_powerpoint(self):
         subprocess.Popen(r"C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE")
-    
+
+    def open_brave(self, url="google.com"):
+        brave_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+        subprocess.Popen([brave_path, url])
+
+    def open_file(self, path):
+        os.startfile(path)
+
     def get_installed_apps(self):
         apps = []
     
@@ -47,6 +55,8 @@ class Open():
 
         filtered_apps = [app for app in apps if not any(app.startswith(prefix) for prefix in ignore_prefixes)]
 
+
+
         return sorted(set(filtered_apps))
 
         
@@ -56,4 +66,4 @@ if __name__ == "__main__":
     # for app in apps:
     #     print(app)
     open_client = Open()
-    open_client.open_word()
+    open_client.open_file(r"C:\Users\cpick\Pictures\rplace.png")

@@ -2,8 +2,6 @@ import speech_recognition as sr
 
 def stt(language="fr-FR"):
     recognizer = sr.Recognizer()
-
-    # 🔧 Adjust sensitivity
     recognizer.energy_threshold = 300    # ambient noise energy level
     recognizer.pause_threshold = 0.8     # seconds of silence before stopping
 
