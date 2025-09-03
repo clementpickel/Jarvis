@@ -32,7 +32,7 @@ class Steam():
         return None
     
     def get_games(self):
-        url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
+        url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
         params = {
             "key": self.api_key,
             "steamid": self.steam_id,
@@ -52,14 +52,18 @@ class Steam():
             os.startfile(f"steam://rungameid/{appid}")
         else:
             print("❌ Invalid AppID, cannot start the game.")
+    
+    def start_game_from_name(self, game_name):
+        game = self.get_game(game_name)
+        if self.has_game(game.name):
+            self.start_game(game.appid)
+            print(f"✅ Starting '{game_name}'...")
+        else:
+            print(f"❌ You do not own '{game_name}' on Steam.")
+
 
 
 if __name__ == "__main__":
     steam_client = Steam()
-    game_name = "Darktide"
-    game = steam_client.get_game(game_name)
-    if steam_client.has_game(game.name):
-        steam_client.start_game(game.appid)
-        print(f"✅ Starting '{game_name}'...")
-    else:
-        print(f"❌ You do not own '{game_name}' on Steam.")
+    game_name = "Lethal"
+    steam_client.start_game_from_name(game_name)
