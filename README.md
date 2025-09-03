@@ -71,15 +71,10 @@ Control my pc by voice commands
 python main.py
 ```
 
-<!-- **Example Natural Language Commands:**
+---
+## Get your API key
 
-* "Open Steam"
-* "Play Cyberpunk 2077"
-* "Launch Chrome"
-
-**Voice Mode:**
-
-* Say: *"Jarvis, open Spotify."*
-* Say: *"Jarvis, launch Notepad."* -->
+gemini api key: https://aistudio.google.com/app/apikey
+steam pi key: https://steamcommunity.com/dev
 
 ---
