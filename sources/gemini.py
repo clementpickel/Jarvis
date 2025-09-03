@@ -20,84 +20,99 @@ class Gemini:
             "text": text
         })
 
-    
-    # functions: list[function] = [
-    #     Function(
-    #         gemini=
-    #     )
-    # ]
-    # Define function declaration
-    open_steam_game = types.FunctionDeclaration(
-        name="steam_client.start_game_from_name",
-        description="Open a game in the steam library",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "game_name": types.Schema(
-                    type=types.Type.STRING,
-                    description="The steam game to start"
-                )
-            },
-            required=["game_name"],
-        ),
-    )
-
-    open_brave = types.FunctionDeclaration(
-        name="open.open_brave",
-        description="Open a web browser",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "url": types.Schema(
-                    type=types.Type.STRING,
-                    description="The url to open, google.com by default"
-                )
-            },
-        ),
-    )
-
-    open_file = types.FunctionDeclaration(
-        name="open_file",
-        description="Open a file",
-        parameters=types.Schema(
-            type=types.Type.OBJECT,
-            properties={
-                "path": types.Schema(
-                    type=types.Type.STRING,
-                    description="Path to the file"
-                )
-            },
-        ),
-    )
-
-    open_calc = types.FunctionDeclaration(
-        name="open.open_calc",
-        description="Open the calculator"
-    )
-
-    open_word = types.FunctionDeclaration(
-        name="open.open_word",
-        description="Open Word"
-    )
-
-    open_excel = types.FunctionDeclaration(
-        name="open.open_excel",
-        description="Open Excel"
-    )
-
-    open_powerpoint = types.FunctionDeclaration(
-        name="open.open_powerpoint",
-        description="Open the powerpoint"
-    )
-
-    tools = types.Tool(function_declarations=[open_steam_game, open_calc, open_word, open_excel, open_powerpoint, open_brave, open_file])
-    config = types.GenerateContentConfig(tools=[tools])
-
-
     def __init__(self, model="gemini-2.5-flash"):
         self.model = model
         self.steam_client = Steam()
         self.open_client = Open()
+        self.functions: list[Function] = [
+            Function(
+                to_execute = self.steam_client.start_game_from_name,
+                recognized_names = ["steam_client.start_game_from_name", "start_game_from_name"],
+                gemini= types.FunctionDeclaration(
+                    name="steam_client.start_game_from_name",
+                    description="Open a game in the steam library",
+                    parameters=types.Schema(
+                        type=types.Type.OBJECT,
+                        properties={
+                            "game_name": types.Schema(
+                                type=types.Type.STRING,
+                                description="The steam game to start"
+                            )
+                        },
+                        required=["game_name"],
+                    ),
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_brave,
+                recognized_names= ["open.open_brave", "open_brave"],
+                gemini= types.FunctionDeclaration(
+                    name="open.open_brave",
+                    description="Open a web browser",
+                    parameters=types.Schema(
+                        type=types.Type.OBJECT,
+                        properties={
+                            "url": types.Schema(
+                                type=types.Type.STRING,
+                                description="The url to open, google.com by default"
+                            )
+                        },
+                    ),
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_file,
+                recognized_names= ["open.open_file", "open_file"],
+                gemini= types.FunctionDeclaration(
+                    name="open_file",
+                    description="Open a file",
+                    parameters=types.Schema(
+                        type=types.Type.OBJECT,
+                        properties={
+                            "path": types.Schema(
+                                type=types.Type.STRING,
+                                description="Path to the file"
+                            )
+                        },
+                    ),
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_calc,
+                recognized_names= ["open.open_calc", "open_calc"],
+                gemini= types.FunctionDeclaration(
+                    name="open.open_calc",
+                    description="Open the calculator"
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_word,
+                recognized_names= ["open.open_word", "open_word"],
+                gemini= types.FunctionDeclaration(
+                    name="open.open_word",
+                    description="Open Word"
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_excel,
+                recognized_names= ["open.open_excel", "open_excel"],
+                gemini= types.FunctionDeclaration(
+                    name="open.open_excel",
+                    description="Open Excel"
+                )
+            ),
+            Function(
+                to_execute= self.open_client.open_powerpoint,
+                recognized_names= ["open.open_powerpoint", "open_powerpoint"],
+                gemini= types.FunctionDeclaration(
+                    name="open.open_powerpoint",
+                    description="Open the powerpoint"
+                )
+            ),
+        ]
+
+        self.tools = types.Tool(function_declarations=[fct.gemini for fct in self.functions])
+        self.config = types.GenerateContentConfig(tools=[self.tools])
 
     def function_call(self, prompt):
         complete_prompt = self.make_prompt(prompt)
@@ -120,20 +135,9 @@ class Gemini:
             if fc:
                 print(f"Function to call: {fc.name}")
                 print(f"Arguments: {fc.args}")
-                if fc.name == "steam_client.start_game_from_name":
-                    self.steam_client.start_game_from_name(**fc.args)
-                elif fc.name == "open.open_calc":
-                    self.open_client.open_calc()
-                elif fc.name in ["open.open_word", "open_word"]:
-                    self.open_client.open_word()
-                elif fc.name in ["open.open_excel", "open_excel"]:
-                    self.open_client.open_excel()
-                elif fc.name in ["open.open_powerpoint", "open_powerpoint"]:
-                    self.open_client.open_powerpoint()
-                elif fc.name in ["open.open_brave", "open_brave"]:
-                    self.open_client.open_brave(**fc.args)
-                elif fc.name in ["open_file"]:
-                    self.open_client.open_file(**fc.args)
+                for fct in self.functions:
+                    if fc.name in fct.recognized_names:
+                        fct.to_execute(**fc.args)
             else:
                 print("No function call found.")
 
